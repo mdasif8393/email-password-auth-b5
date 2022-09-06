@@ -1,6 +1,6 @@
 import './App.css';
 import app from './firebase.init';
-import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail, updateProfile } from "firebase/auth";
 import { Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useState } from 'react';
@@ -15,6 +15,7 @@ function App() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [checked, setChecked] = useState(false);
+  const [name, setName] = useState('');
 
   const handleChecked = (e) => {
     setChecked(e.target.checked);
@@ -51,6 +52,8 @@ function App() {
       setEmail('');
       setPassword('');
       setError('');
+      emailVerification();
+      setNameToFirebase();
     })
     .then((error)=>{
       console.log(error);
@@ -66,6 +69,51 @@ function App() {
   const handlePasswordBlur = (e) => {
     setPassword(e.target.value);
   }
+
+  const handleLogout = () => {
+    signOut(auth)
+    .then(()=>{
+      console.log("Signout successfully");
+    })
+    .catch((error)=>{
+      console.log(error)
+    })
+  }
+
+  const emailVerification = () => {
+    const auth = getAuth();
+sendEmailVerification(auth.currentUser)
+  .then(() => {
+    console.log("Send email verification")
+  });
+  }
+
+  const handleNameBlur = (e) => {
+    setName(e.target.value);
+  }
+
+  const setNameToFirebase = () => {
+    updateProfile(auth.currentUser, {
+      displayName: name
+    }).then(() => {
+      console.log("Set name successfully")
+    }).catch((error) => {
+      console.log(error)
+      // ...
+    });
+    
+  }
+  
+  const resetPassword = () => {
+    sendPasswordResetEmail(auth, email)
+  .then(() => {
+    console.log("Reset password link")
+  })
+  .catch((error) => {
+    console.log(error)
+    // ..
+  });
+  }
   
   return (
     <div>
@@ -73,6 +121,16 @@ function App() {
       <div className="w-50 mx-auto mt-5" >
       
       <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
+
+      {!checked&&
+      <Form.Group className="mb-3" controlId="formBasicEmail">
+      <Form.Label>Your Name</Form.Label>
+      <Form.Control onBlur={handleNameBlur} type="text" placeholder="Enter Your Name" required/>
+      <Form.Control.Feedback type="invalid">
+          Please provide a valid Email.
+        </Form.Control.Feedback>
+    </Form.Group>}
+
       <Form.Group className="mb-3" controlId="formBasicEmail">
         <Form.Label>Email address</Form.Label>
         <Form.Control onBlur={handleEmailBlur} type="email" placeholder="Enter email" required/>
@@ -99,6 +157,7 @@ function App() {
           feedbackType="invalid"
         />
       </Form.Group>
+      <Button onClick={resetPassword} variant="link">Forget Password?</Button>
       <p className="text-danger">{error}</p>
       
       <Button variant="primary" type="submit">
@@ -106,6 +165,8 @@ function App() {
           checked ? 'Login' : 'Resister'
         }
       </Button>
+      <br /> <br />
+      <Button onClick={handleLogout} variant="danger">Logout</Button>
     </Form>
       </div>
     </div>
